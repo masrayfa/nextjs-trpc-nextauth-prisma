@@ -1,26 +1,20 @@
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
-import { resolve } from "path";
 import { z } from "zod";
-
-export const appRouter = trpc.router().query("hailo-semua", {
-  input: z
-    .object({
-      text: z.string().nullish(),
-    })
-    .nullish(),
-  resolve({ input }) {
-    return {
-      greeting: `hello ${input?.text ?? "world"}`,
-    };
-  },
-});
-
-// export type definition of API
-export type AppRouter = typeof appRouter;
+import { createContext } from "../../../server/context";
+import { appRouter } from "../../../server/routers/_app";
 
 // export API handler
 export default trpcNext.createNextApiHandler({
   router: appRouter,
-  createContext: () => null,
+  createContext, // It's the same like createContext: createContext
+
+  batching: {
+    enabled: true,
+  },
+  onError({ error }) {
+    if (error.code === "INTERNAL_SERVER_ERROR") {
+      console.error("Something went wrong", error);
+    }
+  },
 });
